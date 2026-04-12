@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { FbarReport, FbarFundResult } from '../types';
+import { VerificationPanel } from './VerificationPanel';
 
 interface FbarReportViewProps {
   report: FbarReport;
@@ -117,6 +118,8 @@ export function FbarReportView({ report }: FbarReportViewProps) {
           ))}
         </tbody>
       </table>
+
+      <VerificationPanel funds={report.funds} />
 
       <div className="disclaimer-box">
         <strong>Disclaimer:</strong> {report.disclaimer}
