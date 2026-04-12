@@ -7,6 +7,8 @@
  */
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
@@ -18,20 +20,58 @@ const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('he
 const DATA_DIR = path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
+if (!process.env.JWT_SECRET) {
+  console.warn('  ⚠  JWT_SECRET not set — sessions will not survive server restarts.');
+}
+
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-// Simple JSON file store
+// In-memory user cache with disk persistence
+let usersCache = null;
 function readUsers() {
-  if (!fs.existsSync(USERS_FILE)) return {};
-  return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+  if (usersCache) return usersCache;
+  if (!fs.existsSync(USERS_FILE)) { usersCache = {}; return usersCache; }
+  usersCache = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+  return usersCache;
 }
 function writeUsers(users) {
+  usersCache = users;
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 
+// Input validation helpers
+function isValidUsername(v) {
+  return typeof v === 'string' && v.length >= 3 && v.length <= 50 && /^[a-zA-Z0-9_.-]+$/.test(v);
+}
+function isValidPassword(v) {
+  return typeof v === 'string' && v.length >= 6 && v.length <= 128;
+}
+
 const app = express();
-app.use(express.json());
+
+// Gzip compression for all responses
+app.use(compression());
+
+// Rate limiting — auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' },
+});
+
+// Rate limiting — proxy endpoints
+const proxyLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 200, // 200 requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' },
+});
+
+app.use(express.json({ limit: '1mb' }));
 
 // ── Auth middleware ──
 
@@ -51,17 +91,15 @@ function authMiddleware(req, res, next) {
 
 // ── Auth API routes ──
 
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', authLimiter, async (req, res) => {
   const { username, password, displayName } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required' });
+  if (!isValidUsername(username)) {
+    return res.status(400).json({ error: 'Username must be 3-50 alphanumeric characters (a-z, 0-9, _, ., -)' });
   }
-  if (username.length < 3) {
-    return res.status(400).json({ error: 'Username must be at least 3 characters' });
+  if (!isValidPassword(password)) {
+    return res.status(400).json({ error: 'Password must be 6-128 characters' });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  }
+  const safeDisplayName = typeof displayName === 'string' ? displayName.slice(0, 100).trim() : '';
 
   const users = readUsers();
   const key = username.toLowerCase();
@@ -72,7 +110,7 @@ app.post('/api/register', async (req, res) => {
   const hash = await bcrypt.hash(password, 10);
   users[key] = {
     username,
-    displayName: displayName || username,
+    displayName: safeDisplayName || username,
     passwordHash: hash,
     createdAt: new Date().toISOString(),
     activity: [],
@@ -83,9 +121,9 @@ app.post('/api/register', async (req, res) => {
   res.json({ token, user: { username, displayName: users[key].displayName } });
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authLimiter, async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) {
+  if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
     return res.status(400).json({ error: 'Username and password are required' });
   }
 
@@ -119,15 +157,18 @@ app.get('/api/profile', authMiddleware, (req, res) => {
 
 app.post('/api/activity', authMiddleware, (req, res) => {
   const { type, summary, details } = req.body;
+  if (typeof type !== 'string' || typeof summary !== 'string') {
+    return res.status(400).json({ error: 'Activity type and summary are required strings' });
+  }
   const users = readUsers();
   const user = users[req.user.username];
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   const entry = {
     id: crypto.randomUUID(),
-    type: type || 'fbar_report',
-    summary: summary || '',
-    details: details || {},
+    type: type.slice(0, 50),
+    summary: summary.slice(0, 200),
+    details: typeof details === 'object' && details !== null ? details : {},
     timestamp: new Date().toISOString(),
   };
   if (!user.activity) user.activity = [];
@@ -141,21 +182,21 @@ app.post('/api/activity', authMiddleware, (req, res) => {
 
 // ── API Proxies (bypass CORS for browser requests) ──
 
-app.use('/proxy/amfi', createProxyMiddleware({
+app.use('/proxy/amfi', proxyLimiter, createProxyMiddleware({
   target: 'https://www.amfiindia.com',
   changeOrigin: true,
   pathRewrite: { '^/proxy/amfi': '' },
   timeout: 20000,
 }));
 
-app.use('/proxy/mfapi', createProxyMiddleware({
+app.use('/proxy/mfapi', proxyLimiter, createProxyMiddleware({
   target: 'https://api.mfapi.in',
   changeOrigin: true,
   pathRewrite: { '^/proxy/mfapi': '' },
   timeout: 20000,
 }));
 
-app.use('/proxy/treasury', createProxyMiddleware({
+app.use('/proxy/treasury', proxyLimiter, createProxyMiddleware({
   target: 'https://api.fiscaldata.treasury.gov',
   changeOrigin: true,
   pathRewrite: { '^/proxy/treasury': '' },

@@ -8,6 +8,29 @@ import type { FbarFundResult } from '../types';
 
 const AMFI_NAV_URL = '/proxy/amfi/spages/NAVAll.txt';
 
+// Cache the AMFI text to avoid re-downloading the 500KB+ file
+let amfiTextCache: string | null = null;
+let amfiTextPromise: Promise<string> | null = null;
+
+async function getAmfiText(): Promise<string> {
+  if (amfiTextCache) return amfiTextCache;
+  if (amfiTextPromise) return amfiTextPromise;
+  amfiTextPromise = fetch(AMFI_NAV_URL)
+    .then(res => {
+      if (!res.ok) throw new Error(`AMFI fetch failed: ${res.status}`);
+      return res.text();
+    })
+    .then(text => {
+      amfiTextCache = text;
+      return text;
+    })
+    .catch(err => {
+      amfiTextPromise = null;
+      throw err;
+    });
+  return amfiTextPromise;
+}
+
 export interface VerificationResult {
   schemeName: string;
   schemeCode: number;
@@ -35,9 +58,7 @@ export interface VerificationResult {
 async function fetchAmfiLatestNavs(schemeCodes: number[]): Promise<Map<number, { nav: number; date: string }>> {
   const result = new Map<number, { nav: number; date: string }>();
   try {
-    const res = await fetch(AMFI_NAV_URL);
-    if (!res.ok) return result;
-    const text = await res.text();
+    const text = await getAmfiText();
 
     const codeSet = new Set(schemeCodes);
     for (const line of text.split('\n')) {

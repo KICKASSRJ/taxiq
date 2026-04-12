@@ -43,6 +43,21 @@ async function extractTextFromPdf(file: File, password?: string): Promise<string
   return pages;
 }
 
+// Pre-compiled regex patterns (compiled once at module level, not per call)
+const CAMS_SUMMARY_PATTERN = new RegExp(
+  '([\\d][\\d\\/]*)' +               // Group 1: Folio number
+  '\\s+([\\d,]+\\.\\d{2})' +         // Group 2: Market value (2 decimals)
+  '\\s+\\w+\\s+-\\s+' +              // Scheme code + " - "
+  '(.+?)' +                           // Group 3: Scheme name (non-greedy)
+  '\\s+([\\d,]+\\.\\d{3,4})' +       // Group 4: Unit balance (3-4 decimals)
+  '\\s+(\\d{1,2}-[A-Za-z]+-\\d{4})' + // Group 5: NAV date (DD-Mon-YYYY)
+  '\\s+([\\d,]+\\.\\d{2,4})' +       // Group 6: NAV
+  '\\s+(CAMS|KFINTECH)' +             // Group 7: Registrar
+  '\\s+(INF\\w+)' +                   // Group 8: ISIN
+  '\\s+([\\d,]+\\.\\d{3})',           // Group 9: Cost value
+  'gi'
+);
+
 /** Parse CAS text content into structured holdings */
 function parseHoldings(fullText: string): {
   holdings: ParsedHolding[];
@@ -78,23 +93,11 @@ function parseHoldings(fullText: string): {
   const statementDate = dateMatch ? dateMatch[1] : '';
 
   // Strategy 1: CAMS/KFintech CAS Summary — flat table with ISIN markers
-  // Each holding row: Folio  MarketValue  SchemeCode - SchemeName  Units  NAVDate  NAV  Registrar  ISIN  CostValue
-  const camsSummaryPattern = new RegExp(
-    '([\\d][\\d\\/]*)' +               // Group 1: Folio number
-    '\\s+([\\d,]+\\.\\d{2})' +         // Group 2: Market value (2 decimals)
-    '\\s+\\w+\\s+-\\s+' +              // Scheme code + " - "
-    '(.+?)' +                           // Group 3: Scheme name (non-greedy)
-    '\\s+([\\d,]+\\.\\d{3,4})' +       // Group 4: Unit balance (3-4 decimals)
-    '\\s+(\\d{1,2}-[A-Za-z]+-\\d{4})' + // Group 5: NAV date (DD-Mon-YYYY)
-    '\\s+([\\d,]+\\.\\d{2,4})' +       // Group 6: NAV
-    '\\s+(CAMS|KFINTECH)' +             // Group 7: Registrar
-    '\\s+(INF\\w+)' +                   // Group 8: ISIN
-    '\\s+([\\d,]+\\.\\d{3})',           // Group 9: Cost value
-    'gi'
-  );
+  // Reset lastIndex for reuse of global regex
+  CAMS_SUMMARY_PATTERN.lastIndex = 0;
 
   let match;
-  while ((match = camsSummaryPattern.exec(fullText)) !== null) {
+  while ((match = CAMS_SUMMARY_PATTERN.exec(fullText)) !== null) {
     const folioNumber = match[1];
     const marketValue = parseFloat(match[2].replace(/,/g, ''));
     const schemeName = match[3].trim().replace(/\s+/g, ' ')

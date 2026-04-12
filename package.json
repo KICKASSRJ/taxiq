@@ -14,7 +14,9 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "compression": "^1.8.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
     "http-proxy-middleware": "^3.0.5",
     "jsonwebtoken": "^9.0.3",
     "pdfjs-dist": "^4.9.155",

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import type { FbarReport, FbarFundResult } from '../types';
 import { VerificationPanel } from './VerificationPanel';
 
@@ -6,7 +6,7 @@ interface FbarReportViewProps {
   report: FbarReport;
 }
 
-function FundRow({ fund, exchangeRate }: { fund: FbarFundResult; exchangeRate: number }) {
+const FundRow = memo(function FundRow({ fund, exchangeRate }: { fund: FbarFundResult; exchangeRate: number }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -62,7 +62,7 @@ function FundRow({ fund, exchangeRate }: { fund: FbarFundResult; exchangeRate: n
       )}
     </>
   );
-}
+});
 
 export function FbarReportView({ report }: FbarReportViewProps) {
   return (
@@ -113,8 +113,8 @@ export function FbarReportView({ report }: FbarReportViewProps) {
           </tr>
         </thead>
         <tbody>
-          {report.funds.map((fund, idx) => (
-            <FundRow key={idx} fund={fund} exchangeRate={report.exchangeRate} />
+          {report.funds.map((fund) => (
+            <FundRow key={fund.schemeCode} fund={fund} exchangeRate={report.exchangeRate} />
           ))}
         </tbody>
       </table>

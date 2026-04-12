@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { ParsedHolding } from '../types';
 
 interface ManualEntryProps {
@@ -50,7 +50,10 @@ export function ManualEntry({ onSubmit, isLoading }: ManualEntryProps) {
     onSubmit(holdings);
   };
 
-  const validCount = rows.filter(r => r.schemeName.trim() && parseFloat(r.units) > 0).length;
+  const validCount = useMemo(
+    () => rows.filter(r => r.schemeName.trim() && parseFloat(r.units) > 0).length,
+    [rows]
+  );
 
   return (
     <div className="manual-entry-section">

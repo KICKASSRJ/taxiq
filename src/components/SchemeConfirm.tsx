@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { SchemeMatchResult } from '../types';
 
 interface SchemeConfirmProps {
@@ -9,9 +9,11 @@ interface SchemeConfirmProps {
 }
 
 export function SchemeConfirm({ matchResults, onConfirm, onUpdateMatch, onSkip }: SchemeConfirmProps) {
-  const matched = matchResults.filter(m => m.status === 'matched');
-  const ambiguous = matchResults.filter(m => m.status === 'ambiguous');
-  const unmatched = matchResults.filter(m => m.status === 'unmatched');
+  const { matched, ambiguous, unmatched } = useMemo(() => ({
+    matched: matchResults.filter(m => m.status === 'matched'),
+    ambiguous: matchResults.filter(m => m.status === 'ambiguous'),
+    unmatched: matchResults.filter(m => m.status === 'unmatched'),
+  }), [matchResults]);
   const allResolved = ambiguous.length === 0;
 
   return (

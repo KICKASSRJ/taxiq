@@ -4,8 +4,8 @@
   --surface: #ffffff;
   --text: #1A2332;
   --text-muted: #6B7280;
-  --primary: #0D7377;
-  --primary-hover: #095E61;
+  --primary: #14527A;
+  --primary-hover: #0E4265;
   --accent: #D4A843;
   --accent-hover: #C09635;
   --success: #059669;
@@ -23,7 +23,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .app { min-height: 100vh; display: flex; flex-direction: column; }
 
 /* Header */
-.header { background: #0F2027; color: white; padding: 1rem 2rem; }
+.header { background: #0B2E42; color: white; padding: 1rem 2rem; }
 .header-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
 .header-left { flex: 1; }
 .logo { font-size: 1.5rem; font-weight: 700; }
@@ -37,7 +37,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .btn-logout:hover { color: white; }
 
 /* Login Page */
-.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0F2027 0%, #0B3D3E 50%, #0D7377 100%); padding: 1rem; }
+.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0B2E42 0%, #14527A 50%, #28918D 100%); padding: 1rem; }
 .login-card { background: var(--surface); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); padding: 2.5rem; width: 100%; max-width: 420px; }
 .login-header { text-align: center; margin-bottom: 1.5rem; }
 .login-header h1 { font-size: 1.5rem; color: var(--text); }
@@ -50,7 +50,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
 .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
 .form-group input { padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; transition: border-color 0.2s; }
-.form-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(13,115,119,0.15); }
+.form-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(20,82,122,0.15); }
 .login-error { background: #fef2f2; border: 1px solid #fecaca; color: var(--danger); padding: 0.6rem 0.8rem; border-radius: var(--radius); font-size: 0.85rem; }
 .btn-login { background: var(--primary); color: white; border: none; padding: 0.7rem; border-radius: var(--radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
 .btn-login:hover { background: var(--primary-hover); }
@@ -80,7 +80,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 /* Upload */
 .upload-section { max-width: 640px; margin: 0 auto; }
 .drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 3rem 2rem; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--surface); }
-.drop-zone:hover, .drop-zone.active { border-color: var(--primary); background: #ecfbfb; }
+.drop-zone:hover, .drop-zone.active { border-color: var(--primary); background: #EBF0F8; }
 .drop-zone.loading { cursor: wait; opacity: 0.8; }
 .drop-icon { font-size: 3rem; margin-bottom: 1rem; }
 .drop-text { font-size: 1.1rem; color: var(--text); }
@@ -113,7 +113,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 /* CAS Guide */
 .cas-guide { margin-top: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .cas-guide-header { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.2rem; cursor: pointer; transition: background 0.2s; }
-.cas-guide-header:hover { background: #F0F7F7; }
+.cas-guide-header:hover { background: #EFF3F8; }
 .cas-guide-header h3 { font-size: 1rem; margin: 0; }
 .cas-guide-toggle { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; }
 .cas-guide-body { padding: 0 1.2rem 1.2rem; }
@@ -194,17 +194,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 /* FBAR Table */
 .fbar-table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
-.fbar-table th { text-align: left; padding: 0.75rem 1rem; background: #E6F3F3; border-bottom: 2px solid var(--primary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: #095E61; }
+.fbar-table th { text-align: left; padding: 0.75rem 1rem; background: #E8EEF5; border-bottom: 2px solid var(--primary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: #0B2E42; }
 .fbar-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 .fbar-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .fund-row { cursor: pointer; transition: background 0.15s; }
-.fund-row:hover { background: #F0F7F7; }
+.fund-row:hover { background: #EFF3F8; }
 .fund-name { display: flex; align-items: center; gap: 0.5rem; }
 .expand-icon { font-size: 0.7rem; color: var(--text-muted); width: 1rem; }
 
 /* Audit detail */
 .audit-row td { padding: 0; }
-.audit-detail { background: #F0F7F7; padding: 1.25rem; border-top: 1px solid var(--border); }
+.audit-detail { background: #EFF3F8; padding: 1.25rem; border-top: 1px solid var(--border); }
 .audit-detail h4 { margin-bottom: 0.75rem; font-size: 0.9rem; }
 .audit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
 .audit-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
@@ -216,7 +216,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 /* Verification Panel */
 .verification-panel { margin-top: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.verification-header { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1rem; cursor: pointer; background: #E6F3F3; border-bottom: 1px solid var(--border); }
+.verification-header { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1rem; cursor: pointer; background: #E8EEF5; border-bottom: 1px solid var(--border); }
 .verification-header h3 { font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
 .verify-toggle { color: var(--text-muted); font-size: 0.8rem; }
 .verify-badge { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 12px; font-weight: 600; }
@@ -229,7 +229,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .verify-loading { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 1.5rem 0; }
 .verify-desc { font-size: 0.9rem; margin-bottom: 0.75rem; }
 .verify-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
-.verify-table th { background: #E6F3F3; text-align: left; padding: 0.5rem 0.6rem; font-weight: 600; border-bottom: 2px solid var(--border); color: #095E61; }
+.verify-table th { background: #E8EEF5; text-align: left; padding: 0.5rem 0.6rem; font-weight: 600; border-bottom: 2px solid var(--border); color: #0B2E42; }
 .verify-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
 .verify-fund-name { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .verify-date { font-size: 0.75rem; color: var(--text-muted); }
@@ -285,7 +285,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .manual-table th { text-align: left; padding: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); }
 .manual-table td { padding: 0.35rem 0.5rem; }
 .manual-table input { width: 100%; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; }
-.manual-table input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(13,115,119,0.15); }
+.manual-table input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(20,82,122,0.15); }
 .remove-row-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.1rem; padding: 0.25rem; border-radius: 4px; }
 .remove-row-btn:hover:not(:disabled) { color: var(--danger); background: #fef2f2; }
 .remove-row-btn:disabled { opacity: 0.3; cursor: default; }

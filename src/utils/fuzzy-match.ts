@@ -4,15 +4,20 @@
  * against MFapi.in scheme names.
  */
 
-/** Normalize a scheme name for comparison */
+/** Normalize a scheme name for comparison (cached) */
+const normalizeCache = new Map<string, string>();
 function normalize(name: string): string {
-  return name
+  const cached = normalizeCache.get(name);
+  if (cached !== undefined) return cached;
+  const result = name
     .toLowerCase()
     .replace(/\(.*?\)/g, ' ')     // Remove parenthetical content
     .replace(/\b(the|of|and|in|for|a|an)\b/g, ' ')
     .replace(/[-_&]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+  normalizeCache.set(name, result);
+  return result;
 }
 
 /** Tokenize a normalized name into significant words */

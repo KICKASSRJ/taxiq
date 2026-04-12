@@ -12,10 +12,12 @@ export function UserProfile({ onClose }: UserProfileProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     fetchProfile()
-      .then(setProfile)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
+      .then(data => { if (!cancelled) setProfile(data); })
+      .catch(e => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) return <div className="profile-panel"><div className="spinner" /></div>;
