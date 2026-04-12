@@ -1,0 +1,23 @@
+{
+  "routes": [
+    {
+      "route": "/proxy/amfi/*",
+      "rewrite": "/api/proxy/amfi/{*}"
+    },
+    {
+      "route": "/proxy/mfapi/*",
+      "rewrite": "/api/proxy/mfapi/{*}"
+    },
+    {
+      "route": "/proxy/treasury/*",
+      "rewrite": "/api/proxy/treasury/{*}"
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/sample-data.csv", "/api/*"]
+  },
+  "platform": {
+    "apiRuntime": "node:20"
+  }
+}

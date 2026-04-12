@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: cams-fbar-tracker
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node server.cjs
+    envVars:
+      - key: NODE_ENV
+        value: production
