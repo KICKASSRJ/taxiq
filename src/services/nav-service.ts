@@ -6,6 +6,7 @@
  * 2. MFapi.in search API per scheme (fast fallback)
  */
 import type { MfApiScheme, SchemeNavHistory, NavDataPoint } from '../types';
+import { fuzzyMatchScheme } from '../utils/fuzzy-match';
 
 const MFAPI_BASE = '/proxy/mfapi/mf';
 const AMFI_NAV_URL = '/proxy/amfi/spages/NAVAll.txt';
@@ -128,6 +129,16 @@ export async function resolveSchemeCode(
         name: (direct || results[0]).schemeName,
         method: 'search',
       };
+    }
+  }
+
+  // Strategy 3: Local fuzzy match against AMFI scheme list (fallback when MFapi is down)
+  const schemeList = await fetchSchemeList();
+  if (schemeList.length > 0) {
+    const matches = fuzzyMatchScheme(schemeName, schemeList, 1);
+    if (matches.length > 0 && matches[0].confidence >= 0.4) {
+      console.log(`[NAV] Fuzzy matched "${schemeName}" → "${matches[0].name}" (confidence: ${matches[0].confidence})`);
+      return { code: matches[0].code, name: matches[0].name, method: 'search' };
     }
   }
 
