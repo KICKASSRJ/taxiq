@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { CasGuide } from './CasGuide';
 
 interface UploadProps {
   onFileSelected: (file: File, password?: string) => void;
@@ -115,17 +116,7 @@ export function Upload({ onFileSelected, isLoading, error, needsPassword, status
         We do not retain your financial data.
       </div>
 
-      <details className="guide-section">
-        <summary>How to get your CAS from MFCentral</summary>
-        <ol>
-          <li>Visit <a href="https://www.mfcentral.com" target="_blank" rel="noopener">mfcentral.com</a> and sign in with your PAN + OTP</li>
-          <li>Go to <strong>Portfolio → CAS (Consolidated Account Statement)</strong></li>
-          <li>Select <strong>"Detailed"</strong> CAS type</li>
-          <li>Choose the date range covering the full calendar year you need (e.g., Jan 1 – Dec 31, 2025)</li>
-          <li>Download the PDF and upload it here</li>
-        </ol>
-        <p><em>The Detailed CAS from MFCentral covers both CAMS and KFin (all mutual funds).</em></p>
-      </details>
+      <CasGuide />
     </div>
   );
 }

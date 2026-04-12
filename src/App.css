@@ -110,6 +110,33 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .guide-section li { margin-bottom: 0.5rem; }
 .guide-section a { color: var(--primary); }
 
+/* CAS Guide */
+.cas-guide { margin-top: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.cas-guide-header { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.2rem; cursor: pointer; transition: background 0.2s; }
+.cas-guide-header:hover { background: #F0F7F7; }
+.cas-guide-header h3 { font-size: 1rem; margin: 0; }
+.cas-guide-toggle { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; }
+.cas-guide-body { padding: 0 1.2rem 1.2rem; }
+.cas-guide-intro { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5; }
+.cas-source-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.25rem; }
+.cas-source-tab { flex: 1; background: none; border: none; padding: 0.6rem 1rem; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+.cas-source-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.cas-source-tab:hover { color: var(--text); }
+.cas-tab-badge { background: var(--accent); color: white; font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.cas-steps { display: flex; flex-direction: column; gap: 1rem; }
+.cas-step { display: flex; gap: 0.85rem; align-items: flex-start; }
+.cas-step-num { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; min-width: 28px; background: var(--primary); color: white; border-radius: 50%; font-size: 0.8rem; font-weight: 700; margin-top: 2px; }
+.cas-step strong { display: block; font-size: 0.9rem; margin-bottom: 0.2rem; }
+.cas-step p { font-size: 0.85rem; color: var(--text); line-height: 1.5; margin: 0; }
+.cas-step a { color: var(--primary); font-weight: 600; }
+.cas-step-note { color: var(--text-muted); font-size: 0.8rem; }
+.cas-checklist { list-style: none; padding: 0; margin: 0.3rem 0 0; }
+.cas-checklist li { font-size: 0.85rem; padding: 0.2rem 0; padding-left: 1.2rem; position: relative; }
+.cas-checklist li::before { content: '✓'; position: absolute; left: 0; color: var(--success); font-weight: 700; }
+.cas-cta-btn { display: inline-block; margin-top: 1.25rem; padding: 0.6rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: var(--radius); font-weight: 600; font-size: 0.9rem; transition: background 0.2s; }
+.cas-cta-btn:hover { background: var(--primary-hover); }
+.cas-tip { margin-top: 1.25rem; padding: 0.75rem 1rem; background: #FEF9E7; border: 1px solid #F5D67B; border-radius: var(--radius); font-size: 0.8rem; color: #7C6A1E; line-height: 1.5; }
+
 /* Error */
 .error-message { background: #fef2f2; border: 1px solid #fecaca; color: var(--danger); padding: 0.75rem 1rem; border-radius: var(--radius); margin-bottom: 1rem; }
 
