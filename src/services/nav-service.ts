@@ -163,6 +163,9 @@ export async function resolveSchemeCode(
       console.log(`[NAV] Fuzzy matched "${schemeName}" → "${matches[0].name}" (confidence: ${matches[0].confidence})`);
       return { code: matches[0].code, name: matches[0].name, method: 'search' };
     }
+    console.warn(`[NAV] Fuzzy match too low for "${schemeName}": best=${matches[0]?.name} confidence=${matches[0]?.confidence}`);
+  } else {
+    console.warn(`[NAV] No scheme list available for fuzzy matching "${schemeName}"`);
   }
 
   return null;
@@ -176,7 +179,8 @@ export async function fetchSchemeList(): Promise<MfApiScheme[]> {
   if (schemeListCache) return schemeListCache;
 
   const map = await buildIsinMap();
-  if (map.size > 1000) {
+  console.log(`[NAV] fetchSchemeList: ISIN map has ${map.size} entries`);
+  if (map.size > 0) {
     const schemes: MfApiScheme[] = [];
     const seen = new Set<number>();
     for (const { code, name } of map.values()) {
@@ -186,9 +190,11 @@ export async function fetchSchemeList(): Promise<MfApiScheme[]> {
       }
     }
     schemeListCache = schemes;
+    console.log(`[NAV] Scheme list built: ${schemes.length} unique schemes`);
     return schemes;
   }
 
+  console.warn('[NAV] fetchSchemeList: AMFI data not available, fuzzy match disabled');
   return [];
 }
 
