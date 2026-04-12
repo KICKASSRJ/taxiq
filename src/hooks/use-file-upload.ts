@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { CASParseResult, ParsedHolding, SchemeMatchResult } from '../types';
 import { parseCasPdf } from '../services/cas-parser';
-import { resolveSchemeCode } from '../services/nav-service';
+import { resolveSchemeCode, probeMfapi } from '../services/nav-service';
 import { getDemoMatchResults, DEMO_HOLDINGS } from '../utils/demo-data';
 import { startTrace, traceStart, traceEnd, endTrace } from '../utils/perf-trace';
 
@@ -47,6 +47,8 @@ export function useFileUpload() {
 
   const matchHoldings = useCallback(async (holdings: ParsedHolding[]): Promise<SchemeMatchResult[]> => {
     const tMatch = traceStart('Resolve all scheme codes', 'match', `${holdings.length} holdings`);
+    // Probe MFapi once before batch — if down, circuit breaker skips it for all holdings
+    await probeMfapi();
     const results = await Promise.allSettled(
       holdings.map(h => resolveSchemeCode(h.amfiCode, h.schemeName))
     );

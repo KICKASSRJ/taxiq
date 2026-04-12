@@ -79,17 +79,40 @@ export async function lookupByIsin(isin: string): Promise<{ code: number; name: 
 
 /** Search MFapi.in for schemes by name */
 export async function searchSchemes(query: string): Promise<MfApiScheme[]> {
+  if (mfapiDown) return []; // Circuit breaker: skip if known down
   try {
-    const res = await fetchWithTimeout(`${MFAPI_BASE}/search?q=${encodeURIComponent(query)}`, 8000);
-    if (!res.ok) return [];
+    const res = await fetchWithTimeout(`${MFAPI_BASE}/search?q=${encodeURIComponent(query)}`, 4000);
+    if (!res.ok) {
+      mfapiDown = true; // Mark as down on non-200
+      return [];
+    }
     const text = await res.text();
     try {
       return JSON.parse(text);
     } catch {
+      mfapiDown = true;
       return []; // API returned non-JSON (e.g. 502 HTML page)
     }
   } catch {
+    mfapiDown = true; // Timeout or network error
     return [];
+  }
+}
+
+// ──── MFapi Circuit Breaker ────
+let mfapiDown = false;
+
+/** Probe MFapi availability once (called before batch matching) */
+export async function probeMfapi(): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${MFAPI_BASE}/search?q=SBI`, 3000);
+    if (!res.ok) { mfapiDown = true; return false; }
+    const text = await res.text();
+    try { JSON.parse(text); mfapiDown = false; return true; }
+    catch { mfapiDown = true; return false; }
+  } catch {
+    mfapiDown = true;
+    return false;
   }
 }
 
