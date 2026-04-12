@@ -82,7 +82,7 @@ export function useFileUpload() {
         if (!result.success) {
           if (result.errors.some(e => e.includes('password'))) {
             setNeedsPassword(true);
-            setError(null);
+            setError(password ? 'Password incorrect. Please try again.' : null);
           } else {
             setError(result.errors.join(' '));
           }

@@ -201,7 +201,8 @@ export async function parseCasPdf(file: File, password?: string): Promise<CASPar
       errors,
     };
   } catch (err: any) {
-    if (err?.name === 'PasswordException') {
+    if (err?.name === 'PasswordException' || err?.message?.includes('password')) {
+      const isRetry = !!password;
       return {
         success: false,
         holdings: [],
@@ -209,7 +210,9 @@ export async function parseCasPdf(file: File, password?: string): Promise<CASPar
         pan: '',
         email: '',
         statementDate: '',
-        errors: ['This PDF is password-protected. Please enter the password (usually: first 4 characters of PAN + DOB in DDMMYYYY format).'],
+        errors: [isRetry
+          ? 'Incorrect password. Please check and try again.'
+          : 'This PDF is password-protected. Please enter the password (usually: first 4 characters of PAN + DOB in DDMMYYYY format).'],
       };
     }
     return {
