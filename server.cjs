@@ -1,5 +1,5 @@
 /**
- * Production server for CAMS FBAR Tracker.
+ * Production server for TaxIQ.
  * Serves the built app, proxies API requests, and handles auth.
  * 
  * Usage: node server.cjs
@@ -178,7 +178,7 @@ const http = require('http');
 const server = http.createServer(app);
 
 server.listen(PORT, () => {
-  console.log(`\n  CAMS FBAR Tracker is running!\n`);
+  console.log(`\n  TaxIQ is running!\n`);
   console.log(`  Open in your browser:  http://localhost:${PORT}\n`);
   console.log(`  Press Ctrl+C to stop.\n`);
 });

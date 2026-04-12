@@ -2,8 +2,8 @@
  * Auth service — handles login, registration, and token management.
  */
 
-const TOKEN_KEY = 'cams_auth_token';
-const USER_KEY = 'cams_auth_user';
+const TOKEN_KEY = 'taxiq_auth_token';
+const USER_KEY = 'taxiq_auth_user';
 
 export interface AuthUser {
   username: string;

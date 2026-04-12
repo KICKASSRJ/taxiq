@@ -1,10 +1,10 @@
 @echo off
-title CAMS FBAR Tracker
+title TaxIQ
 cd /d "%~dp0"
 
 echo.
-echo   CAMS FBAR Tracker
-echo   =================
+echo   TaxIQ - FBAR and FATCA Compliance
+echo   ==================================
 echo.
 
 REM Check if Node.js is installed

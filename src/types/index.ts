@@ -1,4 +1,4 @@
-/** All TypeScript types for the CAMS MF Tax Tracker */
+/** All TypeScript types for TaxIQ */
 
 /** A single mutual fund holding parsed from CAS */
 export interface ParsedHolding {

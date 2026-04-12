@@ -37,8 +37,8 @@ export function LoginPage({ onAuth }: LoginPageProps) {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <h1>CAMS FBAR Tracker</h1>
-          <p>Mutual fund tax computation for FBAR &amp; FATCA</p>
+          <h1>TaxIQ</h1>
+          <p>FBAR & FATCA compliance for Indian mutual funds</p>
         </div>
 
         <div className="login-tabs">
