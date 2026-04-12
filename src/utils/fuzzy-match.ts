@@ -79,7 +79,7 @@ export interface FuzzyMatchResult {
 
 /**
  * Find best matches for a CAS scheme name from a list of MFapi.in schemes.
- * Returns top matches sorted by confidence.
+ * Uses a two-phase approach: fast token filter, then precise scoring on top candidates.
  */
 export function fuzzyMatchScheme(
   casName: string,
@@ -89,16 +89,24 @@ export function fuzzyMatchScheme(
   const queryTokens = tokenize(casName);
   const queryNorm = normalize(casName);
 
-  const scored = candidates.map(c => {
+  // Phase 1: Fast pre-filter using cheap token overlap (no Levenshtein)
+  const preScored = candidates.map(c => {
     const candTokens = tokenize(c.schemeName);
-    const candNorm = normalize(c.schemeName);
-
-    // Combine multiple similarity signals
     const jaccard = jaccardSimilarity(queryTokens, candTokens);
     const containment = containmentScore(queryTokens, candTokens);
-    const strSim = stringSimilarity(queryNorm, candNorm);
+    const cheapScore = jaccard * 0.45 + containment * 0.55;
+    return { c, cheapScore, candTokens };
+  });
 
-    // Weighted combination
+  preScored.sort((a, b) => b.cheapScore - a.cheapScore);
+  const shortlist = preScored.slice(0, 50); // Only run Levenshtein on top 50
+
+  // Phase 2: Precise scoring with string similarity on shortlist only
+  const scored = shortlist.map(({ c, candTokens, cheapScore }) => {
+    const candNorm = normalize(c.schemeName);
+    const strSim = stringSimilarity(queryNorm, candNorm);
+    const jaccard = jaccardSimilarity(queryTokens, candTokens);
+    const containment = containmentScore(queryTokens, candTokens);
     const confidence = jaccard * 0.35 + containment * 0.4 + strSim * 0.25;
 
     return {

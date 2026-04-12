@@ -68,7 +68,7 @@ export function useFileUpload() {
     setStatusMsg('Reading PDF file...');
 
     const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Processing timed out after 30 seconds. Please check your connection and try again.')), 30000)
+      setTimeout(() => reject(new Error('Processing timed out after 60 seconds. Please check your connection and try again.')), 60000)
     );
 
     try {
