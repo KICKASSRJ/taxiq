@@ -79,9 +79,14 @@ export async function lookupByIsin(isin: string): Promise<{ code: number; name: 
 /** Search MFapi.in for schemes by name */
 export async function searchSchemes(query: string): Promise<MfApiScheme[]> {
   try {
-    const res = await fetchWithTimeout(`${MFAPI_BASE}/search?q=${encodeURIComponent(query)}`, 10000);
+    const res = await fetchWithTimeout(`${MFAPI_BASE}/search?q=${encodeURIComponent(query)}`, 8000);
     if (!res.ok) return [];
-    return await res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return []; // API returned non-JSON (e.g. 502 HTML page)
+    }
   } catch {
     return [];
   }

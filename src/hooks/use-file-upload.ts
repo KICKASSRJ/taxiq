@@ -47,9 +47,10 @@ export function useFileUpload() {
 
   const matchHoldings = useCallback(async (holdings: ParsedHolding[]): Promise<SchemeMatchResult[]> => {
     const tMatch = traceStart('Resolve all scheme codes', 'match', `${holdings.length} holdings`);
-    const resolved = await Promise.all(
+    const results = await Promise.allSettled(
       holdings.map(h => resolveSchemeCode(h.amfiCode, h.schemeName))
     );
+    const resolved = results.map(r => r.status === 'fulfilled' ? r.value : null);
     const matchedCount = resolved.filter(Boolean).length;
     traceEnd(tMatch, `${matchedCount}/${holdings.length} resolved`);
     return buildMatchResults(holdings, resolved);
