@@ -182,12 +182,25 @@ app.post('/api/activity', authMiddleware, (req, res) => {
 
 // ── API Proxies (bypass CORS for browser requests) ──
 
-app.use('/proxy/amfi', proxyLimiter, createProxyMiddleware({
-  target: 'https://www.amfiindia.com',
-  changeOrigin: true,
-  pathRewrite: { '^/proxy/amfi': '' },
-  timeout: 20000,
-}));
+// AMFI: manual fetch handler (www.amfiindia.com redirects to portal.amfiindia.com
+// and http-proxy-middleware passes the 302 to the browser, which fails CORS)
+app.get('/proxy/amfi/*', proxyLimiter, async (req, res) => {
+  const amfiPath = req.path.replace('/proxy/amfi', '');
+  const url = `https://www.amfiindia.com${amfiPath}`;
+  try {
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'TaxIQ/1.0' },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) return res.status(resp.status).send(resp.statusText);
+    res.set('Content-Type', resp.headers.get('content-type') || 'text/plain');
+    const body = await resp.text();
+    res.send(body);
+  } catch (e) {
+    console.error('[AMFI proxy]', e.message);
+    res.status(502).send('AMFI fetch failed');
+  }
+});
 
 app.use('/proxy/mfapi', proxyLimiter, createProxyMiddleware({
   target: 'https://api.mfapi.in',
