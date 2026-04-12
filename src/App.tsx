@@ -12,6 +12,8 @@ import { ManualEntry } from './components/ManualEntry';
 import { SchemeConfirm } from './components/SchemeConfirm';
 import { Computing } from './components/Computing';
 import { FbarReportView } from './components/FbarReport';
+import { LoginPage } from './components/LoginPage';
+import { UserProfile } from './components/UserProfile';
 import { parseCasPdf } from './services/cas-parser';
 import { resolveSchemeCode } from './services/nav-service';
 import { generateFbarReport } from './services/fbar-engine';
@@ -19,10 +21,14 @@ import { getDemoMatchResults, DEMO_HOLDINGS } from './utils/demo-data';
 import { downloadCsv } from './utils/csv-export';
 import { startTrace, traceStart, traceEnd, traceError, endTrace } from './utils/perf-trace';
 import { PerfPanel } from './components/PerfPanel';
+import type { AuthUser } from './services/auth-service';
+import { getStoredUser, isLoggedIn, logout, saveActivity } from './services/auth-service';
 
 type InputMode = 'pdf' | 'manual' | 'demo';
 
 export default function App() {
+  const [authUser, setAuthUser] = useState<AuthUser | null>(getStoredUser());
+  const [showProfile, setShowProfile] = useState(false);
   const [step, setStep] = useState<AppStep>('upload');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -213,6 +219,17 @@ export default function App() {
       setReport(fbarReport);
       endTrace();
       setStep('report');
+
+      // Save activity
+      saveActivity('fbar_report',
+        `FBAR report for ${calendarYear} — ${fbarReport.funds.length} funds, peak $${fbarReport.totalPeakUSD.toLocaleString()}`,
+        {
+          year: calendarYear,
+          fundsCount: fbarReport.funds.length,
+          totalPeakUSD: fbarReport.totalPeakUSD,
+          investor: parseResult?.investorName || '',
+        }
+      );
     } catch (err: any) {
       setError(err?.message || 'Failed to compute FBAR report');
       setStep('confirm-schemes');
@@ -230,11 +247,43 @@ export default function App() {
     setReport(null);
   }, []);
 
+  const handleLogout = useCallback(() => {
+    logout();
+    setAuthUser(null);
+    setShowProfile(false);
+    handleReset();
+  }, [handleReset]);
+
+  // Show login page if not authenticated
+  if (!authUser || !isLoggedIn()) {
+    return (
+      <div className="app">
+        <LoginPage onAuth={(user) => setAuthUser(user)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
-      <Header />
+      <Header>
+        <div className="user-menu">
+          <button className="btn-user" onClick={() => setShowProfile(!showProfile)}>
+            👤 {authUser.displayName}
+          </button>
+          <button className="btn-logout" onClick={handleLogout}>
+            Sign Out
+          </button>
+        </div>
+      </Header>
       <PerfPanel />
 
+      {showProfile && (
+        <div className="main">
+          <UserProfile onClose={() => setShowProfile(false)} />
+        </div>
+      )}
+
+      {!showProfile && (
       <main className="main">
         {step === 'upload' && (
           <>
@@ -344,7 +393,13 @@ export default function App() {
           <>
             <FbarReportView report={report} />
             <div className="actions">
-              <button className="btn-primary" onClick={() => downloadCsv(report)}>
+              <button className="btn-primary" onClick={() => {
+                downloadCsv(report);
+                saveActivity('csv_export', `CSV export for ${report.calendarYear}`, {
+                  year: report.calendarYear,
+                  funds: report.funds.length,
+                });
+              }}>
                 📥 Download CSV
               </button>
               <button className="btn-secondary" onClick={handleReset}>
@@ -354,6 +409,7 @@ export default function App() {
           </>
         )}
       </main>
+      )}
 
       <footer className="footer">
         <p>
