@@ -147,9 +147,12 @@ export async function verifyFundNavData(
     const amfi = amfiNavs.get(fund.schemeCode);
     const mfapi = mfapiNavs[i];
 
-    // Match if both have values and are within 0.01 tolerance
-    const match = !!(amfi && mfapi &&
-      Math.abs(amfi.nav - mfapi.nav) < 0.01);
+    // Match if both sources have values and agree within 0.01 tolerance,
+    // OR if only AMFI is available (MFapi down), count as verified via AMFI
+    const bothAvailable = !!(amfi && mfapi);
+    const match = bothAvailable
+      ? Math.abs(amfi!.nav - mfapi!.nav) < 0.01
+      : !!amfi; // AMFI-only: verified if AMFI has data
 
     return {
       schemeName: fund.matchedSchemeName,

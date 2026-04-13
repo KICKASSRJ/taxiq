@@ -122,7 +122,14 @@ export function VerificationPanel({ funds }: VerificationPanelProps) {
           )}
 
           {results && results.length === 0 && (
-            <p className="verify-error">Verification could not be completed. Please verify manually using AMFI India website.</p>
+            <div className="verify-error">
+              <p>Verification could not be completed — no matched funds available.</p>
+              <p style={{marginTop:'0.5rem',fontSize:'0.85rem'}}>This can happen if scheme matching failed. Try re-uploading your CAS PDF (Ctrl+Shift+R to hard refresh first).</p>
+              <p style={{marginTop:'0.5rem',fontSize:'0.85rem'}}>
+                You can also verify manually at{' '}
+                <a href="https://www.amfiindia.com/net-asset-value/nav-history" target="_blank" rel="noopener noreferrer">AMFI India NAV History</a>.
+              </p>
+            </div>
           )}
         </div>
       )}
