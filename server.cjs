@@ -203,6 +203,27 @@ app.use('/proxy/amfi', proxyLimiter, async (req, res) => {
   }
 });
 
+// AMFI historical NAV (portal.amfiindia.com — separate host from www.amfiindia.com)
+app.get('/proxy/amfi-history', proxyLimiter, async (req, res) => {
+  const { frmdt, todt } = req.query;
+  if (!frmdt || !todt) return res.status(400).send('frmdt and todt required');
+  const url = `https://portal.amfiindia.com/DownloadNAVHistoryReport_Po.aspx?frmdt=${frmdt}&todt=${todt}`;
+  console.log('[AMFI history proxy] Fetching:', url);
+  try {
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'TaxIQ/1.0' },
+      signal: AbortSignal.timeout(45000),
+    });
+    if (!resp.ok) return res.status(resp.status).send(resp.statusText);
+    res.set('Content-Type', 'text/plain; charset=utf-8');
+    const body = await resp.text();
+    res.send(body);
+  } catch (e) {
+    console.error('[AMFI history proxy]', e.message);
+    res.status(502).send('AMFI history fetch failed');
+  }
+});
+
 app.use('/proxy/mfapi', proxyLimiter, createProxyMiddleware({
   target: 'https://api.mfapi.in',
   changeOrigin: true,

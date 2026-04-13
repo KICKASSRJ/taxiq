@@ -202,28 +202,116 @@ export async function fetchSchemeList(): Promise<MfApiScheme[]> {
 
 const navCache = new Map<number, SchemeNavHistory>();
 
-export async function fetchSchemeNav(schemeCode: number): Promise<SchemeNavHistory> {
+// AMFI historical NAV cache (shared across all schemes for a year)
+let amfiHistoryCache: Map<number, NavDataPoint[]> | null = null;
+let amfiHistoryPromise: Promise<Map<number, NavDataPoint[]>> | null = null;
+
+/**
+ * Fetch full-year historical NAV from AMFI portal for ALL schemes.
+ * Returns a Map: schemeCode → NavDataPoint[]
+ * Format: schemeCode;schemeName;ISIN1;ISIN2;NAV;;;dd-Mon-yyyy
+ */
+async function fetchAmfiHistory(year: number): Promise<Map<number, NavDataPoint[]>> {
+  if (amfiHistoryCache) return amfiHistoryCache;
+  if (amfiHistoryPromise) return amfiHistoryPromise;
+
+  amfiHistoryPromise = (async () => {
+    const map = new Map<number, NavDataPoint[]>();
+    try {
+      const frmdt = `01-Jan-${year}`;
+      const todt = `31-Dec-${year}`;
+      console.log(`[NAV] Downloading AMFI historical NAV ${frmdt} to ${todt}...`);
+      const t0 = performance.now();
+      const res = await fetchWithTimeout(
+        `/proxy/amfi-history?frmdt=${encodeURIComponent(frmdt)}&todt=${encodeURIComponent(todt)}`,
+        45000
+      );
+      if (!res.ok) throw new Error(`AMFI history fetch failed: ${res.status}`);
+      const text = await res.text();
+      console.log(`[NAV] AMFI history downloaded: ${Math.round(text.length / 1024)}KB in ${Math.round(performance.now() - t0)}ms`);
+
+      for (const line of text.split('\n')) {
+        const parts = line.split(';');
+        // Format: schemeCode;name;ISIN1;ISIN2;NAV;;;date
+        if (parts.length >= 8 && /^\d+$/.test(parts[0].trim())) {
+          const code = parseInt(parts[0].trim());
+          const navVal = parseFloat(parts[4]?.trim());
+          const dateStr = parts[7]?.trim(); // dd-Mon-yyyy
+          if (!isNaN(navVal) && navVal > 0 && dateStr) {
+            // Convert dd-Mon-yyyy to dd-mm-yyyy
+            const ddMmYyyy = convertAmfiDate(dateStr);
+            if (ddMmYyyy) {
+              if (!map.has(code)) map.set(code, []);
+              map.get(code)!.push({ date: ddMmYyyy, nav: navVal });
+            }
+          }
+        }
+      }
+      console.log(`[NAV] AMFI history parsed: ${map.size} schemes`);
+    } catch (err) {
+      console.warn('[NAV] AMFI history fetch failed:', err);
+      amfiHistoryPromise = null;
+      return map;
+    }
+    amfiHistoryCache = map;
+    return map;
+  })();
+
+  return amfiHistoryPromise;
+}
+
+const MONTH_MAP: Record<string, string> = {
+  Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+  Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12',
+};
+
+function convertAmfiDate(dateStr: string): string | null {
+  // dd-Mon-yyyy → dd-mm-yyyy
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return null;
+  const mm = MONTH_MAP[parts[1]];
+  if (!mm) return null;
+  return `${parts[0]}-${mm}-${parts[2]}`;
+}
+
+export async function fetchSchemeNav(schemeCode: number, year = 2025): Promise<SchemeNavHistory> {
   if (navCache.has(schemeCode)) return navCache.get(schemeCode)!;
 
   const t0 = performance.now();
-  const res = await fetchWithTimeout(`${MFAPI_BASE}/${schemeCode}`);
-  if (!res.ok) throw new Error(`NAV fetch failed for scheme ${schemeCode}: ${res.status}`);
 
-  const data = await res.json();
-  console.log(`[NAV] Scheme ${schemeCode}: ${data.data?.length || 0} points in ${Math.round(performance.now() - t0)}ms`);
+  // Strategy 1: Try MFapi.in (if not known down)
+  if (!mfapiDown) {
+    try {
+      const res = await fetchWithTimeout(`${MFAPI_BASE}/${schemeCode}`, 8000);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.data && data.data.length > 0) {
+          console.log(`[NAV] Scheme ${schemeCode}: ${data.data.length} points via MFapi in ${Math.round(performance.now() - t0)}ms`);
+          const navData: NavDataPoint[] = data.data.map((d: any) => ({
+            date: d.date,
+            nav: parseFloat(d.nav),
+          }));
+          const result: SchemeNavHistory = { schemeCode, schemeName: data.meta?.scheme_name || '', navData };
+          navCache.set(schemeCode, result);
+          return result;
+        }
+      }
+    } catch {
+      // MFapi failed, fall through to AMFI history
+    }
+  }
 
-  const navData: NavDataPoint[] = (data.data || []).map((d: any) => ({
-    date: d.date,
-    nav: parseFloat(d.nav),
-  }));
-
-  const result: SchemeNavHistory = {
-    schemeCode,
-    schemeName: data.meta?.scheme_name || '',
-    navData,
-  };
-  navCache.set(schemeCode, result);
-  return result;
+  // Strategy 2: Use AMFI historical NAV data
+  try {
+    const historyMap = await fetchAmfiHistory(year);
+    const navData = historyMap.get(schemeCode) || [];
+    console.log(`[NAV] Scheme ${schemeCode}: ${navData.length} points via AMFI history in ${Math.round(performance.now() - t0)}ms`);
+    const result: SchemeNavHistory = { schemeCode, schemeName: '', navData };
+    navCache.set(schemeCode, result);
+    return result;
+  } catch (err) {
+    throw new Error(`NAV fetch failed for scheme ${schemeCode}: no data source available`);
+  }
 }
 
 // ──── NAV Utilities ────

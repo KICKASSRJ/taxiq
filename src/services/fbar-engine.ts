@@ -32,7 +32,7 @@ async function computeFundFbar(
   exchangeRateSource: string
 ): Promise<FbarFundResult | null> {
   try {
-    const navHistory = await fetchSchemeNav(schemeCode);
+    const navHistory = await fetchSchemeNav(schemeCode, year);
     const yearNav = filterNavByYear(navHistory.navData, year);
 
     if (yearNav.length === 0) {
