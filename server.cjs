@@ -212,7 +212,7 @@ app.get('/proxy/amfi-history', proxyLimiter, async (req, res) => {
   try {
     const resp = await fetch(url, {
       headers: { 'User-Agent': 'TaxIQ/1.0' },
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.timeout(60000),
     });
     if (!resp.ok) return res.status(resp.status).send(resp.statusText);
     res.set('Content-Type', 'text/plain; charset=utf-8');

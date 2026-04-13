@@ -208,8 +208,8 @@ let amfiHistoryPromise: Promise<Map<number, NavDataPoint[]>> | null = null;
 
 /**
  * Fetch full-year historical NAV from AMFI portal for ALL schemes.
+ * Downloads in quarterly batches (parallel) since full-year is too large (~250MB).
  * Returns a Map: schemeCode → NavDataPoint[]
- * Format: schemeCode;schemeName;ISIN1;ISIN2;NAV;;;dd-Mon-yyyy
  */
 async function fetchAmfiHistory(year: number): Promise<Map<number, NavDataPoint[]>> {
   if (amfiHistoryCache) return amfiHistoryCache;
@@ -217,20 +217,36 @@ async function fetchAmfiHistory(year: number): Promise<Map<number, NavDataPoint[
 
   amfiHistoryPromise = (async () => {
     const map = new Map<number, NavDataPoint[]>();
-    try {
-      const frmdt = `01-Jan-${year}`;
-      const todt = `31-Dec-${year}`;
-      console.log(`[NAV] Downloading AMFI historical NAV ${frmdt} to ${todt}...`);
-      const t0 = performance.now();
-      const res = await fetchWithTimeout(
-        `/proxy/amfi-history?frmdt=${encodeURIComponent(frmdt)}&todt=${encodeURIComponent(todt)}`,
-        45000
-      );
-      if (!res.ok) throw new Error(`AMFI history fetch failed: ${res.status}`);
-      const text = await res.text();
-      console.log(`[NAV] AMFI history downloaded: ${Math.round(text.length / 1024)}KB in ${Math.round(performance.now() - t0)}ms`);
+    const t0 = performance.now();
+    console.log(`[NAV] Downloading AMFI historical NAV for ${year} (4 quarters in parallel)...`);
 
-      for (const line of text.split('\n')) {
+    const quarters = [
+      { frmdt: `01-Jan-${year}`, todt: `31-Mar-${year}`, label: 'Q1' },
+      { frmdt: `01-Apr-${year}`, todt: `30-Jun-${year}`, label: 'Q2' },
+      { frmdt: `01-Jul-${year}`, todt: `30-Sep-${year}`, label: 'Q3' },
+      { frmdt: `01-Oct-${year}`, todt: `31-Dec-${year}`, label: 'Q4' },
+    ];
+
+    const results = await Promise.allSettled(
+      quarters.map(async (q) => {
+        const qt0 = performance.now();
+        const res = await fetchWithTimeout(
+          `/proxy/amfi-history?frmdt=${encodeURIComponent(q.frmdt)}&todt=${encodeURIComponent(q.todt)}`,
+          50000
+        );
+        if (!res.ok) throw new Error(`${q.label} failed: ${res.status}`);
+        const text = await res.text();
+        console.log(`[NAV] AMFI ${q.label}: ${Math.round(text.length / 1024)}KB in ${Math.round(performance.now() - qt0)}ms`);
+        return text;
+      })
+    );
+
+    for (const result of results) {
+      if (result.status !== 'fulfilled') {
+        console.warn('[NAV] Quarter fetch failed:', result.reason);
+        continue;
+      }
+      for (const line of result.value.split('\n')) {
         const parts = line.split(';');
         // Format: schemeCode;name;ISIN1;ISIN2;NAV;;;date
         if (parts.length >= 8 && /^\d+$/.test(parts[0].trim())) {
@@ -238,7 +254,6 @@ async function fetchAmfiHistory(year: number): Promise<Map<number, NavDataPoint[
           const navVal = parseFloat(parts[4]?.trim());
           const dateStr = parts[7]?.trim(); // dd-Mon-yyyy
           if (!isNaN(navVal) && navVal > 0 && dateStr) {
-            // Convert dd-Mon-yyyy to dd-mm-yyyy
             const ddMmYyyy = convertAmfiDate(dateStr);
             if (ddMmYyyy) {
               if (!map.has(code)) map.set(code, []);
@@ -247,13 +262,13 @@ async function fetchAmfiHistory(year: number): Promise<Map<number, NavDataPoint[
           }
         }
       }
-      console.log(`[NAV] AMFI history parsed: ${map.size} schemes`);
-    } catch (err) {
-      console.warn('[NAV] AMFI history fetch failed:', err);
-      amfiHistoryPromise = null;
-      return map;
     }
-    amfiHistoryCache = map;
+
+    const successCount = results.filter(r => r.status === 'fulfilled').length;
+    console.log(`[NAV] AMFI history: ${successCount}/4 quarters loaded, ${map.size} schemes, ${Math.round(performance.now() - t0)}ms total`);
+
+    if (map.size > 0) amfiHistoryCache = map;
+    else amfiHistoryPromise = null; // allow retry if all failed
     return map;
   })();
 
