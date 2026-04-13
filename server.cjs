@@ -184,8 +184,8 @@ app.post('/api/activity', authMiddleware, (req, res) => {
 
 // AMFI: manual fetch handler (www.amfiindia.com redirects to portal.amfiindia.com
 // and http-proxy-middleware passes the 302 to the browser, which fails CORS)
-app.get('/proxy/amfi/*', proxyLimiter, async (req, res) => {
-  const amfiPath = req.path.replace('/proxy/amfi', '');
+app.get('/proxy/amfi/{*path}', proxyLimiter, async (req, res) => {
+  const amfiPath = '/' + (req.params.path || '');
   const url = `https://www.amfiindia.com${amfiPath}`;
   try {
     const resp = await fetch(url, {
